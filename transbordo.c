@@ -13,6 +13,8 @@ int proxConsumidoChacao;
 int proxProducidoChacao;
 int p;
 
+int barcosEnCaminoAChacao;
+int barcosEnCaminoAPargua;
 
 
 void inicializar(int P){
@@ -31,6 +33,8 @@ void inicializar(int P){
 	barcosEnChacao = 0;
 	proxProducidoChacao = 0;
 	proxProducidoChacao = 0;
+	barcosEnCaminoAPargua = 0;
+	barcosEnCaminoAChacao = 0;
 }
 
 void finalizar(){
@@ -49,6 +53,7 @@ int consumirEnChacao(){
 	barco = enChacao[proxConsumidoChacao];
 	proxConsumidoChacao = (proxConsumidoChacao + 1) % p;
 	barcosEnChacao--;
+	barcosEnCaminoAPargua++;
 	nNotifyAll(m);
 	nExit(m);
 	return barco;
@@ -66,6 +71,7 @@ int consumirEnPargua(){
 	//nPrintf("Barco: %d\n",barco);
 	proxConsumidoPargua = (proxConsumidoPargua + 1) % p;
 	barcosEnPargua--;
+	barcosEnCaminoAChacao++;
 	nNotifyAll(m);
 	nExit(m);
 	return barco;
@@ -80,6 +86,7 @@ void producirEnChacao(int x){
 	enChacao[proxProducidoChacao] = x;
 	proxProducidoChacao = (proxProducidoChacao + 1) % p;
 	barcosEnChacao++;
+	barcosEnCaminoAChacao--;
 	nNotifyAll(m);
 	nExit(m);
 }
@@ -93,14 +100,19 @@ void producirEnPargua(int x){
 	enPargua[proxProducidoPargua] = x;
 	proxProducidoPargua = (proxProducidoPargua + 1) % p;
 	barcosEnPargua++;
+	barcosEnCaminoAPargua--;
 	nNotifyAll(m);
 	nExit(m);
 }
 
 void transbordoAChacao(int v){
 	//nPrintf("Transbordo a chacao de :%d\n",v);
-	if(barcosEnChacao == p){
+	nEnter(m);
+	if(barcosEnChacao + barcosEnCaminoAChacao == p){
+		nExit(m);
 		transbordoAPargua(-1);
+	} else {
+		nExit(m);
 	}
 	int x = consumirEnPargua();
 	haciaChacao(x,v);
@@ -109,8 +121,12 @@ void transbordoAChacao(int v){
 
 void transbordoAPargua(int v){
 	//nPrintf("Transbordo a pargua de :%d\n",v);
-	if(barcosEnPargua == p){
+	nEnter(m);
+	if(barcosEnPargua + barcosEnCaminoAPargua == p){
+		nExit(m);
 		transbordoAChacao(-1);
+	} else {
+		nExit(m);
 	}
 	int x = consumirEnChacao();
 	haciaPargua(x,v);
